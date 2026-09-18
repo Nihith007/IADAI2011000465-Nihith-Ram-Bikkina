@@ -78,9 +78,14 @@ def main():
     with st.sidebar:
         st.header("Settings")
         conf = st.slider("Detection confidence threshold", 0.1, 0.9, CONF_THRESHOLD, 0.05)
+        infer_size = st.select_slider(
+            "Inference resolution", options=[416, 640, 960, 1280], value=960
+        )
         st.markdown(
-            "Lower the threshold to catch more (possibly noisier) detections; "
-            "raise it to keep only confident ones."
+            "Lower the confidence threshold to catch more (possibly noisier) detections. "
+            "Raise the inference resolution for images with many small/distant slots "
+            "(wide aerial shots, large lots) — it's slower but catches detail the model "
+            "would otherwise lose when the image gets downscaled."
         )
 
     uploaded_file = st.file_uploader("Upload a parking lot image", type=["jpg", "jpeg", "png"])
@@ -98,7 +103,7 @@ def main():
     image = Image.open(uploaded_file)
 
     with st.spinner("Detecting parking slots..."):
-        results = model.predict(source=image, conf=conf, verbose=False)
+        results = model.predict(source=image, conf=conf, imgsz=infer_size, verbose=False)
         all_boxes = results[0].boxes
         # Drop the "spaces" parent/lot box (or any other non-slot class) — only keep individual slots
         boxes = [b for b in all_boxes if CLASS_NAMES[int(b.cls[0])] in SLOT_NAMES]
