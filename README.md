@@ -2,15 +2,15 @@
 
 # ParkVision AI: Intelligent Urban Parking Analytics & Space Optimisation Platform
 
-# Candidate Name - [your name]
+# Candidate Name - Nihith Ram Bikkina
 
-# Candidate Registration Number - [your registration number]
+# Candidate Registration Number - 1000465
 
 # CRS Name: Artificial Intelligence
 
 # Course Name - Machine Learning and Deep Learning
 
-# School name - [your school name]
+# School name - Birla Open Minds International School, Kollur
 
 # Summative Assessment
 
