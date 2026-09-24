@@ -14,133 +14,138 @@
 
 # Summative Assessment
 
-# Project Overview
+# ParkVision AI — Intelligent Urban Parking Analytics & Space Optimisation Platform
 
-This project is a computer vision system that analyzes parking lot images and determines, slot by slot, whether each space is occupied or empty. Built using YOLOv8 (Ultralytics) for object detection and deployed as a Streamlit web app, the platform draws color-coded bounding boxes over detected slots, calculates real-time availability metrics, classifies congestion level, and gives users a simple recommendation on whether to proceed to the lot or look elsewhere.
+## 1. Overview
 
-# Problem Statement
+ParkVision AI is a computer vision system that analyzes photos of parking lots and automatically identifies which spaces are occupied and which are empty. It calculates real-time occupancy metrics and generates simple recommendations for drivers, all through a web app built with Streamlit.
 
-Urban areas face significant parking challenges — drivers often spend several minutes searching for an empty spot, which increases traffic congestion, fuel consumption, and driver frustration. Existing systems rarely give slot-level, real-time visibility into parking availability. This project addresses that gap using a computer vision model that identifies each individual parking slot in an image and classifies its occupancy status, then converts that into actionable insights.
+**Problem Statement:** Urban areas face serious parking challenges — drivers routinely spend several minutes searching for an empty spot, increasing traffic congestion, fuel consumption, and driver frustration. This is a slot-level problem, not a simple whole-image classification: each individual parking space in a lot must be located and classified, under real-world conditions that include shadows, partial occlusion (cars parked close together), and varying weather.
 
-# Objectives
+**System Definition:**
+- **Input:** a photo of a parking lot (uploaded by the user)
+- **Output:** slot-wise status for every visible space (Occupied / Empty), plus total/occupied/available counts, occupancy percentage, a congestion level, and a recommendation
 
-* Develop a slot-level parking occupancy detection system using object detection
-* Generate real-time availability metrics: total, occupied, and available slots
-* Provide visual smart overlays with color-coded bounding boxes (green = empty, red = occupied)
-* Calculate occupancy percentage and classify congestion as low, moderate, or high
-* Generate simple, actionable recommendations based on availability
-* Deploy the system as an interactive Streamlit dashboard, accessible publicly via Streamlit Cloud
+**Real-World Relevance:** by giving drivers (or a city dashboard) immediate, slot-level visibility into parking availability, this system directly reduces the time spent circling for a spot — cutting unnecessary traffic and emissions in dense urban areas.
 
-# Research Summary
+## 2. Research Findings that Influenced the Project
 
-The development process involved studying vision-based parking slot detection approaches, comparing crop-then-classify pipelines (e.g. MobileNet/EfficientNet on per-slot images) against direct object detection (YOLO) on full parking-lot images. Research into the PKLot dataset's structure and the tradeoffs between classification and detection approaches for slot-level tasks informed the final design. Because the available dataset (a Roboflow export of PKLot) already provided bounding-box annotations in COCO format, a YOLO-based object detection approach was chosen over classification, since it detects and classifies every slot in a single pass without needing separately known slot coordinates. Additional research into image resolution's effect on small-object detection informed decisions during training and inference tuning — downscaling wide, high-altitude parking images to a small fixed resolution was found to hurt detection of distant/small slots, which shaped both the training image size and an adjustable inference-resolution control in the final app.
+Before building the system, I reviewed existing research on parking occupancy detection to understand common approaches and their trade-offs:
 
-# Data Preparation
+- Deep learning-based smart parking systems generally fall into two categories: **classification-based** approaches (classifying individually cropped images of each parking slot as occupied/empty) and **detection-based** approaches (using object detectors like YOLO to locate and classify all slots directly in a full scene image). Classification approaches are simpler but require known slot locations in advance. Detection-based approaches are more flexible — they work on new camera angles without manual slot marking — but need higher-resolution input to reliably distinguish many small, densely packed objects.
+- The dataset available to me (a Roboflow export of PKLot) already provided bounding-box annotations in COCO format, which made a detection-based (YOLO) approach the natural fit — it detects and classifies every slot in a single pass, with no need to separately mark slot coordinates in advance.
+- Vision-based parking slot detection research highlights that detection accuracy is strongly affected by image resolution relative to object (slot) size — a finding I confirmed directly during this project (see Section 7, Testing & Limitations).
+- The PKLot dataset itself was designed specifically to support robust parking classification research across varying lighting and weather conditions (sunny, cloudy, rainy), which is why it remains a standard benchmark for this type of task.
 
-* Dataset: PKLot (Roboflow export, COCO-annotated), pre-split into train/valid/test folders
-* Training set: 8,691 images, 497,856 bounding-box annotations
-* Test set: 1,242 images, 70,684 slot instances
-* Classes: `space-empty`, `space-occupied` (plus a `spaces` parent/lot-level box, excluded from slot counting)
-* COCO JSON annotations converted to YOLO `.txt` label format (normalized bounding boxes)
-* Native train/valid/test split as provided by the dataset export
+These findings directly shaped my decision to use a YOLOv8 object detector rather than a per-slot classifier, and later informed how I diagnosed and fixed reduced detection coverage on wide, high-altitude test images.
 
-# Model Configuration
+## 3. Academic References and Key Sources
 
-* Base model: YOLOv8n (Ultralytics), pretrained on COCO, fine-tuned on the PKLot slot-detection data
-* Training run: 30 epochs, image size 640px, batch size 16, early stopping patience 10
-* An initial faster run (15 epochs, 416px) was used to validate the pipeline end-to-end before committing to the longer, higher-resolution training run for the final model
-* Inference resolution is configurable in the deployed app (416–1280px) — raising it improves detection of small/distant slots in wide aerial shots at the cost of slower inference
+- [PKLot: A Robust Dataset for Parking Lot Classification](https://www.inf.ufpr.br/lesoliveira/download/pklot-readme.pdf)
+- [Vision-Based Parking Slot Detection using Deep Learning](https://www.mdpi.com/1424-8220/23/15/6869)
+- [YOLO Object Detection Documentation (Ultralytics Official)](https://docs.ultralytics.com/)
+- [Streamlit Documentation](https://docs.streamlit.io/)
 
-# Sample Outputs and Validation
+## 4. Data Preparation
 
-* mAP50: 0.994 | mAP50-95: 0.918
-* Precision: `space-empty` 0.996, `space-occupied` 0.997
-* Recall: `space-empty` 0.991, `space-occupied` 0.997
-* Evaluated on the held-out test set (1,242 images, 70,684 annotated slots)
-* The model performs strongly and near-identically on both classes. Testing on a wide, high-altitude drone photo (outside the typical PKLot camera framing) showed reduced detection coverage on distant/small slots at default settings — resolved by raising the inference resolution, confirming the research finding above about downscaling and small-object detection.
+### Dataset
+Source: [PKLot dataset](https://www.inf.ufpr.br/lesoliveira/download/pklot-readme.pdf) via a Roboflow export — parking lot images captured under varying weather conditions (sunny, cloudy, rainy), pre-split into `train/`, `valid/`, and `test/` folders, each with a `_annotations.coco.json` file.
 
-# Web Application Features
+### Preparation Process
 
-* Image upload for any parking lot photo
-* Real YOLO-detected bounding boxes overlaid on the image — green for empty, red for occupied
-* Live metrics: total slots, occupied slots, available slots, occupancy percentage
-* Congestion level classification: Low (<40%), Moderate (40–75%), High (>75%)
-* Automatic recommendation: proceed to park, or try another location
-* Adjustable confidence threshold and inference resolution in the sidebar
-* Clean, responsive Streamlit interface
+- Inspected the COCO annotation files to identify the actual classes present: `spaces` (a parent/lot-level box covering the whole lot, not an individual slot), `space-empty`, and `space-occupied`.
+- Excluded `spaces` from slot-counting logic since it isn't an individual parking space.
+- Converted COCO-format bounding-box annotations into YOLO's normalized label format (`class x_center y_center width height`) for every image in each split, writing one `.txt` label file per image.
+- Built a `data.yaml` config pointing to the train/valid/test folders and the detected class names.
+- Used the dataset's native train/valid/test split rather than re-splitting manually.
 
-# Deployment
+### Data Cleaning
+- Verified each image had a corresponding, correctly formatted annotation entry before conversion.
+- Confirmed no zero-width/zero-height boxes were produced during the COCO-to-YOLO coordinate conversion.
 
-The application was built with Streamlit and uses a YOLOv8 model (Ultralytics) loaded directly from a committed `.pt` weights file — no external API key required. The complete project was hosted on GitHub and deployed on Streamlit Community Cloud.
+### Dataset Size
+- Training set: 8,691 images, 497,856 bounding-box annotations
+- Test set: 1,242 images, 70,684 slot instances
 
-* Train the model in Google Colab (see `ParkVision_AI_Colab.ipynb`) and export the trained weights (`best.pt`) to Google Drive.
-* Download the weights file and place it in the project at `model/parkvision_yolo_best.pt`.
-* Add a `.gitattributes` file marking `*.pt` as binary, to prevent Git from corrupting the weights file via line-ending conversion.
-* Add a `packages.txt` file listing `libgl1` and `libglib2.0-0` — required system libraries for OpenCV (a dependency of Ultralytics) to run on Streamlit Cloud's container.
-* Add a `runtime.txt` pinning Python 3.11 for a stable, well-supported build environment.
-* Upload all project files to a GitHub repository, including the code, trained model, and requirements file.
-* Log in to Streamlit Cloud (streamlit.io/cloud) with GitHub, select the repository, branch, and `app.py` as the main file, and deploy.
-* Test the deployed app with a fresh parking-lot image to confirm detections render correctly.
+## 5. Models Used
 
-**Live app link:** [your Streamlit Cloud link here]
+### YOLOv8n (Detection Approach)
+- **Architecture:** YOLOv8n (Ultralytics), the smallest/fastest variant in the YOLOv8 family, trained from pretrained COCO weights.
+- **Training parameters:** 30 epochs (early stopping patience 10), image size 640×640, batch size 16.
+- **Classes:** `space-empty`, `space-occupied` (`spaces` is present in the data but excluded from occupancy counting)
+- **Technique:** Full-image object detection — the model directly outputs bounding boxes and class labels for every parking slot visible in an uploaded photo, without requiring pre-marked slot positions.
+- An initial faster run (15 epochs, image size 416×416) was used first to validate the full pipeline end-to-end before committing to the longer, higher-resolution training run used for the final model.
 
-# Screenshots
+## 6. Metrics and Results
+
+### YOLOv8n Detector — Test Set Results
+Evaluated on the held-out test set (1,242 images, 70,684 annotated slots):
+
+| Metric | space-empty | space-occupied |
+|---|---|---|
+| Precision | 0.996 | 0.997 |
+| Recall | 0.991 | 0.997 |
+
+**mAP50:** 0.994 | **mAP50-95:** 0.918
+
+Confusion matrix and training curves: see `confusion_matrix.png` and `training_curves.png`.
+
+The model performs strongly and near-identically on both classes, indicating the empty-vs-occupied distinction is visually clear-cut across the weather/lighting conditions and camera angles present in PKLot.
+
+## 7. Testing & Limitations
+
+The system was tested on unseen images from the PKLot test split, as well as external test photos not drawn from the training distribution.
+
+**Key finding — resolution-dependent detection coverage:** When I tested the deployed app on a wide, high-altitude drone photo of a large parking lot (a much wider framing than PKLot's typical camera shots), detection coverage dropped noticeably for rows of cars further from the camera — those slots appeared as very few pixels once the image was downscaled to the model's inference resolution, making them too small to detect confidently. Rows closer to the camera, with larger apparent slot size, were detected reliably.
+
+This matches the research finding in Section 2 about resolution's effect on small-object detection. The fix implemented in the app is an adjustable inference-resolution setting (416–1280px) in the sidebar — raising it for wide/high-altitude images preserves more detail for distant slots, at the cost of slower inference. This is a dataset/scale limitation rather than a flaw in the model architecture: PKLot's training images don't include this style of very-wide aerial framing, so the model generalizes less well to it by default.
+
+## 8. System Logic
+
+- **Occupancy % =** (occupied slots ÷ total slots) × 100
+- **Congestion levels:**
+  - Low: occupancy < 40%
+  - Moderate: occupancy 40–75%
+  - High: occupancy > 75%
+- **Recommendations:**
+  - ≥90% occupied: "Parking nearly full — try another location."
+  - <90% occupied: "Slots available — proceed to park."
+
+## 9. Web App
+
+Built with [Streamlit](https://docs.streamlit.io/). Users upload a photo of a parking lot and the app:
+1. Runs the trained YOLOv8n model to detect and classify every visible slot.
+2. Draws color-coded bounding boxes (green = empty, red = occupied) directly on the image.
+3. Displays total/occupied/available slot counts, occupancy percentage, congestion level, and a recommendation — all updating live as the confidence threshold and inference resolution are adjusted in the sidebar.
+
+## 10. Screenshots
 
 [Insert screenshots of the running app here — upload screen, annotated detection output, live metrics panel, and the congestion/recommendation display]
 
-# Example Test Images
+## 11. Deployment & Repository
 
-Upload a clear, moderately-zoomed parking lot photo similar to PKLot's camera framing.
+The application uses a YOLOv8 model (Ultralytics) loaded directly from a committed `.pt` weights file — no external API key required.
 
-[Insert screenshot of result]
+- Trained the model in Google Colab (`ParkVision_AI_Colab.ipynb`) and exported the weights (`best.pt`) to Google Drive.
+- Placed the downloaded weights file in the project at `model/parkvision_yolo_best.pt`.
+- Added a `.gitattributes` file marking `*.pt` as binary, to prevent Git from corrupting the weights file via line-ending conversion.
+- Added a `packages.txt` file listing `libgl1` and `libglib2.0-0` — required system libraries for OpenCV (a dependency of Ultralytics) on Streamlit Cloud's container.
+- Added a `runtime.txt` pinning Python 3.11 for a stable build environment.
+- Uploaded all project files to GitHub — code (.ipynb, .py), the trained model, a representative sample of the dataset, and this README — then deployed via Streamlit Cloud (streamlit.io/cloud) by selecting the repository, branch, and `app.py` as the main file.
+- Repository access granted to `ai.assignments@wacpinternational.org` as required for submission.
 
-Upload a wide, high-altitude aerial/drone shot of a large lot.
-
-[Insert screenshot of result, noting the inference-resolution setting used]
-
-Upload an image with heavy shadows or partial occlusion (cars parked close together).
-
-[Insert screenshot of result]
-
-Upload a rainy or overcast-weather parking lot image.
-
-[Insert screenshot of result]
-
-# Key Research Findings That Shaped This Project
-
-* Object detection (YOLO) outperforms crop-then-classify pipelines for slot-level parking occupancy when bounding-box-labeled data is available, since it locates and classifies slots in one pass rather than depending on pre-known slot coordinates.
-* PKLot's coverage of multiple weather conditions (sunny, cloudy, rainy) matters for generalization — a model trained only on clear-weather images tends to misclassify shadowed or wet-surface slots.
-* Small/distant objects lose detail when images are downscaled to a fixed training resolution; training and inference at higher resolution (640px+) improves detection of slots far from the camera.
-* [Add your own additional finding here based on your own testing.]
-
-# References
-
-* [PKLot: A Robust Dataset for Parking Lot Classification](https://www.inf.ufpr.br/lesoliveira/download/pklot-readme.pdf)
-* [Vision-Based Parking Slot Detection using Deep Learning](https://www.mdpi.com/1424-8220/23/15/6869)
-* [YOLO Object Detection Documentation (Ultralytics Official)](https://docs.ultralytics.com/)
-* [Streamlit Documentation](https://docs.streamlit.io)
-* [Add 1-2 more references from the assignment brief's suggested reading list.]
-
-# Repository Structure
-
+**Repository structure:**
 ```
-├── ParkVision_AI_Colab.ipynb   # data prep, training, evaluation (run in Google Colab)
+├── ParkVision_AI_Colab.ipynb   # data prep, training, evaluation
 ├── app.py                      # Streamlit dashboard
 ├── requirements.txt
-├── packages.txt                # system dependencies for Streamlit Cloud (OpenCV support)
-├── runtime.txt                 # pins Python version for Streamlit Cloud
-├── .gitattributes              # ensures the model file is treated as binary
+├── packages.txt
+├── runtime.txt
+├── .gitattributes
 ├── model/
-│   └── parkvision_yolo_best.pt # trained YOLOv8 weights
-├── data_sample/                # small sample of the dataset (not the full PKLot set)
+│   └── parkvision_yolo_best.pt
+├── data_sample/                # representative sample of the dataset
 ├── training_curves.png
 ├── confusion_matrix.png
 └── README.md
-```
-
-# How to Run Locally
-
-```bash
-pip install -r requirements.txt
-streamlit run app.py
 ```
