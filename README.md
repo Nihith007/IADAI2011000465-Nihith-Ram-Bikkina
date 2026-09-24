@@ -39,14 +39,8 @@ Before building the system, I reviewed existing research on parking occupancy de
 
 These findings directly shaped my decision to use a YOLOv8 object detector rather than a per-slot classifier, and later informed how I diagnosed and fixed reduced detection coverage on wide, high-altitude test images.
 
-## 3. Academic References and Key Sources
 
-- [PKLot: A Robust Dataset for Parking Lot Classification](https://www.inf.ufpr.br/lesoliveira/download/pklot-readme.pdf)
-- [Vision-Based Parking Slot Detection using Deep Learning](https://www.mdpi.com/1424-8220/23/15/6869)
-- [YOLO Object Detection Documentation (Ultralytics Official)](https://docs.ultralytics.com/)
-- [Streamlit Documentation](https://docs.streamlit.io/)
-
-## 4. Data Preparation
+## 3. Data Preparation
 
 ### Dataset
 Source: [PKLot dataset](https://www.inf.ufpr.br/lesoliveira/download/pklot-readme.pdf) via a Roboflow export — parking lot images captured under varying weather conditions (sunny, cloudy, rainy), pre-split into `train/`, `valid/`, and `test/` folders, each with a `_annotations.coco.json` file.
@@ -67,7 +61,7 @@ Source: [PKLot dataset](https://www.inf.ufpr.br/lesoliveira/download/pklot-readm
 - Training set: 8,691 images, 497,856 bounding-box annotations
 - Test set: 1,242 images, 70,684 slot instances
 
-## 5. Models Used
+## 4. Models Used
 
 ### YOLOv8n (Detection Approach)
 - **Architecture:** YOLOv8n (Ultralytics), the smallest/fastest variant in the YOLOv8 family, trained from pretrained COCO weights.
@@ -76,7 +70,7 @@ Source: [PKLot dataset](https://www.inf.ufpr.br/lesoliveira/download/pklot-readm
 - **Technique:** Full-image object detection — the model directly outputs bounding boxes and class labels for every parking slot visible in an uploaded photo, without requiring pre-marked slot positions.
 - An initial faster run (15 epochs, image size 416×416) was used first to validate the full pipeline end-to-end before committing to the longer, higher-resolution training run used for the final model.
 
-## 6. Metrics and Results
+## 5. Metrics and Results
 
 ### YOLOv8n Detector — Test Set Results
 Evaluated on the held-out test set (1,242 images, 70,684 annotated slots):
@@ -92,15 +86,8 @@ Confusion matrix and training curves: see `confusion_matrix.png` and `training_c
 
 The model performs strongly and near-identically on both classes, indicating the empty-vs-occupied distinction is visually clear-cut across the weather/lighting conditions and camera angles present in PKLot.
 
-## 7. Testing & Limitations
 
-The system was tested on unseen images from the PKLot test split, as well as external test photos not drawn from the training distribution.
-
-**Key finding — resolution-dependent detection coverage:** When I tested the deployed app on a wide, high-altitude drone photo of a large parking lot (a much wider framing than PKLot's typical camera shots), detection coverage dropped noticeably for rows of cars further from the camera — those slots appeared as very few pixels once the image was downscaled to the model's inference resolution, making them too small to detect confidently. Rows closer to the camera, with larger apparent slot size, were detected reliably.
-
-This matches the research finding in Section 2 about resolution's effect on small-object detection. The fix implemented in the app is an adjustable inference-resolution setting (416–1280px) in the sidebar — raising it for wide/high-altitude images preserves more detail for distant slots, at the cost of slower inference. This is a dataset/scale limitation rather than a flaw in the model architecture: PKLot's training images don't include this style of very-wide aerial framing, so the model generalizes less well to it by default.
-
-## 8. System Logic
+## 6. System Logic
 
 - **Occupancy % =** (occupied slots ÷ total slots) × 100
 - **Congestion levels:**
@@ -111,7 +98,7 @@ This matches the research finding in Section 2 about resolution's effect on smal
   - ≥90% occupied: "Parking nearly full — try another location."
   - <90% occupied: "Slots available — proceed to park."
 
-## 9. Web App
+## 7. Web App
 
 Built with [Streamlit](https://docs.streamlit.io/). Users upload a photo of a parking lot and the app:
 1. Runs the trained YOLOv8n model to detect and classify every visible slot.
@@ -120,14 +107,14 @@ Built with [Streamlit](https://docs.streamlit.io/). Users upload a photo of a pa
 
 Live Streamlit app link: https://machine-learning-sa-zdze2bbmdrbbzmvoxkp387.streamlit.app/  
 
-## 10. Screenshots
+## 8. Screenshots
 
 <img width="1201" height="850" alt="image" src="https://github.com/user-attachments/assets/795c8e83-077b-4600-8f2b-439de8610458" />
 <img width="1200" height="866" alt="image" src="https://github.com/user-attachments/assets/67d80761-0165-4688-81da-f07a7bcbbf6d" />
 <img width="1201" height="861" alt="image" src="https://github.com/user-attachments/assets/7059ab01-3e50-4879-bea0-5c4681931c74" />
 
 
-## 11. Deployment & Repository
+## 9. Deployment & Repository
 
 The application uses a YOLOv8 model (Ultralytics) loaded directly from a committed `.pt` weights file — no external API key required.
 
@@ -154,3 +141,18 @@ The application uses a YOLOv8 model (Ultralytics) loaded directly from a committ
 ├── confusion_matrix.png
 └── README.md
 ```
+## 10. Testing & Limitations
+
+The system was tested on unseen images from the PKLot test split, as well as external test photos not drawn from the training distribution.
+
+**Key finding — resolution-dependent detection coverage:** When I tested the deployed app on a wide, high-altitude drone photo of a large parking lot (a much wider framing than PKLot's typical camera shots), detection coverage dropped noticeably for rows of cars further from the camera — those slots appeared as very few pixels once the image was downscaled to the model's inference resolution, making them too small to detect confidently. Rows closer to the camera, with larger apparent slot size, were detected reliably.
+
+This matches the research finding in Section 2 about resolution's effect on small-object detection. The fix implemented in the app is an adjustable inference-resolution setting (416–1280px) in the sidebar — raising it for wide/high-altitude images preserves more detail for distant slots, at the cost of slower inference. This is a dataset/scale limitation rather than a flaw in the model architecture: PKLot's training images don't include this style of very-wide aerial framing, so the model generalizes less well to it by default.
+
+## 11. Academic References and Key Sources
+
+- [PKLot: A Robust Dataset for Parking Lot Classification](https://www.inf.ufpr.br/lesoliveira/download/pklot-readme.pdf)
+- [Vision-Based Parking Slot Detection using Deep Learning](https://www.mdpi.com/1424-8220/23/15/6869)
+- [YOLO Object Detection Documentation (Ultralytics Official)](https://docs.ultralytics.com/)
+- [Streamlit Documentation](https://docs.streamlit.io/)
+
