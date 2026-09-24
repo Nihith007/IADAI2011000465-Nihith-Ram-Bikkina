@@ -118,9 +118,14 @@ Built with [Streamlit](https://docs.streamlit.io/). Users upload a photo of a pa
 2. Draws color-coded bounding boxes (green = empty, red = occupied) directly on the image.
 3. Displays total/occupied/available slot counts, occupancy percentage, congestion level, and a recommendation — all updating live as the confidence threshold and inference resolution are adjusted in the sidebar.
 
+Live Streamlit app link: https://machine-learning-sa-zdze2bbmdrbbzmvoxkp387.streamlit.app/  
+
 ## 10. Screenshots
 
-[Insert screenshots of the running app here — upload screen, annotated detection output, live metrics panel, and the congestion/recommendation display]
+<img width="1201" height="850" alt="image" src="https://github.com/user-attachments/assets/795c8e83-077b-4600-8f2b-439de8610458" />
+<img width="1200" height="866" alt="image" src="https://github.com/user-attachments/assets/67d80761-0165-4688-81da-f07a7bcbbf6d" />
+<img width="1201" height="861" alt="image" src="https://github.com/user-attachments/assets/7059ab01-3e50-4879-bea0-5c4681931c74" />
+
 
 ## 11. Deployment & Repository
 
