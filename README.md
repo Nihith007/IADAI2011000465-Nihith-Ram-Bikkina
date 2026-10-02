@@ -1,7 +1,5 @@
 # IADAI2011000465-Nihith Ram Bikkina
 
-# ParkVision AI: Intelligent Urban Parking Analytics & Space Optimisation Platform
-
 # Candidate Name - Nihith Ram Bikkina
 
 # Candidate Registration Number - 1000465
