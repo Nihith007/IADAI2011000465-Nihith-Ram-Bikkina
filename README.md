@@ -14,6 +14,8 @@
 
 # ParkVision AI — Intelligent Urban Parking Analytics & Space Optimisation Platform
 
+## Live Streamlit app link: https://machine-learning-sa-zdze2bbmdrbbzmvoxkp387.streamlit.app/  
+
 ## 1. Overview
 
 ParkVision AI is a computer vision system that analyzes photos of parking lots and automatically identifies which spaces are occupied and which are empty. It calculates real-time occupancy metrics and generates simple recommendations for drivers, all through a web app built with Streamlit.
@@ -102,8 +104,6 @@ Built with [Streamlit](https://docs.streamlit.io/). Users upload a photo of a pa
 1. Runs the trained YOLOv8n model to detect and classify every visible slot.
 2. Draws color-coded bounding boxes (green = empty, red = occupied) directly on the image.
 3. Displays total/occupied/available slot counts, occupancy percentage, congestion level, and a recommendation — all updating live as the confidence threshold and inference resolution are adjusted in the sidebar.
-
-Live Streamlit app link: https://machine-learning-sa-zdze2bbmdrbbzmvoxkp387.streamlit.app/  
 
 ## 8. Screenshots
 
