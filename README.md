@@ -112,34 +112,7 @@ Live Streamlit app link: https://machine-learning-sa-zdze2bbmdrbbzmvoxkp387.stre
 <img width="1201" height="861" alt="image" src="https://github.com/user-attachments/assets/7059ab01-3e50-4879-bea0-5c4681931c74" />
 
 
-## 9. Deployment & Repository
-
-The application uses a YOLOv8 model (Ultralytics) loaded directly from a committed `.pt` weights file — no external API key required.
-
-- Trained the model in Google Colab (`ParkVision_AI_Colab.ipynb`) and exported the weights (`best.pt`) to Google Drive.
-- Placed the downloaded weights file in the project at `model/parkvision_yolo_best.pt`.
-- Added a `.gitattributes` file marking `*.pt` as binary, to prevent Git from corrupting the weights file via line-ending conversion.
-- Added a `packages.txt` file listing `libgl1` and `libglib2.0-0` — required system libraries for OpenCV (a dependency of Ultralytics) on Streamlit Cloud's container.
-- Added a `runtime.txt` pinning Python 3.11 for a stable build environment.
-- Uploaded all project files to GitHub — code (.ipynb, .py), the trained model, a representative sample of the dataset, and this README — then deployed via Streamlit Cloud (streamlit.io/cloud) by selecting the repository, branch, and `app.py` as the main file.
-- Repository access granted to `ai.assignments@wacpinternational.org` as required for submission.
-
-**Repository structure:**
-```
-├── ParkVision_AI_Colab.ipynb   # data prep, training, evaluation
-├── app.py                      # Streamlit dashboard
-├── requirements.txt
-├── packages.txt
-├── runtime.txt
-├── .gitattributes
-├── model/
-│   └── parkvision_yolo_best.pt
-├── data_sample/                # representative sample of the dataset
-├── training_curves.png
-├── confusion_matrix.png
-└── README.md
-```
-## 10. Testing & Limitations
+## 9. Testing & Limitations
 
 The system was tested on unseen images from the PKLot test split, as well as external test photos not drawn from the training distribution.
 
@@ -147,7 +120,7 @@ The system was tested on unseen images from the PKLot test split, as well as ext
 
 This matches the research finding in Section 2 about resolution's effect on small-object detection. The fix implemented in the app is an adjustable inference-resolution setting (416–1280px) in the sidebar — raising it for wide/high-altitude images preserves more detail for distant slots, at the cost of slower inference. This is a dataset/scale limitation rather than a flaw in the model architecture: PKLot's training images don't include this style of very-wide aerial framing, so the model generalizes less well to it by default.
 
-## 11. Academic References and Key Sources
+## 10. Academic References and Key Sources
 
 - [PKLot: A Robust Dataset for Parking Lot Classification](https://www.inf.ufpr.br/lesoliveira/download/pklot-readme.pdf)
 - [Vision-Based Parking Slot Detection using Deep Learning](https://www.mdpi.com/1424-8220/23/15/6869)
